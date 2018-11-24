@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include "duplicate_search.h"
 
 namespace Ui {
 class MainWindow;
@@ -22,7 +23,7 @@ private slots:
     void scan_directory(QString const& dir);
     void duplicate_find();
     void show_about_dialog();
-    void display_table(const std::vector<std::pair<std::vector<std::string>, uint64_t>> &duplicate_list, const std::vector<std::string> &p_denied);
+    void display_table(duplicates const & dups);
 
 private:
     std::unique_ptr<Ui::MainWindow> ui;

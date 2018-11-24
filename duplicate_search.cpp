@@ -105,7 +105,7 @@ std::vector<std::vector<std::string>> find_equals(std::vector<std::string> const
 
 void duplicate_search::clear()  {
     mp = std::map<uint64_t, std::vector<std::string>>();
-    denied_files = std::vector<std::string>(0);
+    pd_paths = std::vector<std::string>(0);
 }
 
 void duplicate_search::add_tomp(std::string const &p, uint64_t const &fs) {
@@ -126,7 +126,7 @@ void duplicate_search::update(const std::string &path){
                 add_tomp(fi.absoluteFilePath().toStdString(), static_cast<uint64_t>(fi.size()));
             }
         } else {
-            denied_files.push_back(fi.absoluteFilePath().toStdString());
+            pd_paths.push_back(fi.absoluteFilePath().toStdString());
         }
     }
 }
@@ -136,8 +136,8 @@ duplicate_search::duplicate_search(const std::string &path) {
     update(path);
 }
 
-std::vector<std::pair<std::vector<std::string>, uint64_t>> duplicate_search::get_dublicate() {
-    std::vector<std::pair<std::vector<std::string>, uint64_t>> ans(0);
+duplicates duplicate_search::get_dublicate() {
+    duplicates ans;
     for (auto &i:mp) {
         if (i.second.size() > MAX_OPEN_FILE) {
             if(i.first < READ_BLOCK && i.second.size()*i.first < 2097152) {
@@ -157,7 +157,7 @@ std::vector<std::pair<std::vector<std::string>, uint64_t>> duplicate_search::get
                 }
                 for (auto &j:lmap) {
                     if (j.second.size() > 1) {
-                        ans.push_back({j.second, i.first});
+                        ans.duplicates.emplace_back(j.second, i.first);
                     }
                 }
             } else {
@@ -212,7 +212,7 @@ std::vector<std::pair<std::vector<std::string>, uint64_t>> duplicate_search::get
                     }
                     for (auto &j:arr) {
                         if (j.size() > 1) {
-                            ans.push_back({j, i.first});
+                            ans.duplicates.emplace_back(j, i.first);
                         }
                     }
                 }
@@ -221,19 +221,15 @@ std::vector<std::pair<std::vector<std::string>, uint64_t>> duplicate_search::get
             auto arr = find_equals(i.second);
             for (auto &j:arr) {
                 if (j.size() > 1) {
-                    ans.push_back({j, i.first});
+                    ans.duplicates.emplace_back(j, i.first);
                 }
             }
         } else if (i.second.size() > 1) {
             if (is_equal(i.second.front(), i.second.back())) {
-                ans.push_back({{i.second.front(), i.second.back()}, i.first});
+                ans.duplicates.emplace_back(std::vector<std::string>({i.second.front(), i.second.back()}), i.first);
             }
         }
     }
+    ans.pd_paths = pd_paths;
     return ans;
-}
-
-std::vector<std::pair<std::vector<std::string>, uint64_t>> duplicate_search::get_dublicate(std::vector<std::string> &denied_files) {
-    denied_files = this->denied_files;
-    return get_dublicate();
 }

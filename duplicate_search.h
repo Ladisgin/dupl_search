@@ -18,10 +18,21 @@
 const size_t READ_BLOCK = 4096 * 4;
 const size_t MAX_OPEN_FILE = 200;
 
+struct duplicate {
+    duplicate (std::vector<std::string> const & paths, uint64_t const & size): paths(paths), size(size){}
+    std::vector<std::string> paths;
+    uint64_t size;
+};
+
+struct duplicates {
+    std::vector<duplicate> duplicates;
+    std::vector<std::string> pd_paths;
+};
+
 class duplicate_search {
 private:
     std::map<uint64_t, std::vector<std::string>> mp;
-    std::vector<std::string> denied_files;
+    std::vector<std::string> pd_paths;
 
     void clear();
 
@@ -36,9 +47,7 @@ public:
 
     explicit duplicate_search(const std::string &path);
 
-    std::vector<std::pair<std::vector<std::string>, uint64_t>> get_dublicate();
-    std::vector<std::pair<std::vector<std::string>, uint64_t>> get_dublicate(std::vector<std::string> &denied_files);
-
+    duplicates get_dublicate();
 };
 
 #endif // DUPLICATE_SEARCH_H

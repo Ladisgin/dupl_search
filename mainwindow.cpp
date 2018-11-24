@@ -1,6 +1,5 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "duplicate_search.h"
 
 #include <QCommonStyle>
 #include <QDesktopWidget>
@@ -17,12 +16,12 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
-    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
+//    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
 
     ui->treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->treeWidget->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     ui->treeWidget->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    ui->treeWidget->setStyleSheet("background-color: rgb(31, 33, 37); alternate-background-color: rgb(42, 43, 47); branch-background-color: rgb(255, 0, 0);");
+    ui->treeWidget->setStyleSheet("background-color: rgb(31, 33, 37); alternate-background-color: rgb(42, 43, 47);");
     ui->treeWidget->setAlternatingRowColors(true);
 
     QCommonStyle style;
@@ -65,12 +64,11 @@ void MainWindow::scan_directory(QString const& dir) {
 void MainWindow::duplicate_find(){
     ui->treeWidget->clear();
     auto ds = duplicate_search(cur_dir.toStdString());
-    auto pd = std::vector<std::string>();
-    auto v = ds.get_dublicate(pd);
-    display_table(v, pd);
+    auto v = ds.get_dublicate();
+    display_table(v);
 }
 
-void MainWindow::display_table(const std::vector<std::pair<std::vector<std::string>, uint64_t>> &duplicate_list, const std::vector<std::string> &p_denied) {
+void MainWindow::display_table(duplicates const & dups) {
     setWindowTitle(QString("Dublicate from - %1").arg(cur_dir));
     auto white = QColor();
     auto grey = QColor();
@@ -78,15 +76,15 @@ void MainWindow::display_table(const std::vector<std::pair<std::vector<std::stri
     white.setRgb(255, 255, 255);
     red.setRgb(255, 0, 0);
     grey.setRgb(184, 187, 198);
-    for (auto v : duplicate_list) {
+    for (auto v : dups.duplicates) {
         QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
-        item->setText(0, QString::fromStdString(v.first.front()));
-        item->setText(1, QString::number(v.first.size()));
-        item->setText(2, QString::number(v.second));
+        item->setText(0, QString::fromStdString(v.paths.front()));
+        item->setText(1, QString::number(v.paths.size()));
+        item->setText(2, QString::number(v.size));
         item->setTextColor(0, white);
         item->setTextColor(1, red);
         item->setTextColor(2, red);
-        for (auto file : v.first) {
+        for (auto file : v.paths) {
             QTreeWidgetItem* child = new QTreeWidgetItem();
             child->setText(0, QString::fromStdString(file));
             child->setTextColor(0, grey);
@@ -96,9 +94,9 @@ void MainWindow::display_table(const std::vector<std::pair<std::vector<std::stri
     }
     QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
     item->setText(0, "permission denied files");
-    item->setText(1, QString::number(p_denied.size()));
+    item->setText(1, QString::number(dups.pd_paths.size()));
     item->setTextColor(0, white);
-    for (auto file : p_denied) {
+    for (auto file : dups.pd_paths) {
         QTreeWidgetItem* child = new QTreeWidgetItem();
         child->setText(0, QString::fromStdString(file));
         child->setTextColor(0, grey);
