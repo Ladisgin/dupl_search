@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTime>
 
 #include <vector>
 #include <string>
@@ -28,6 +29,7 @@ private slots:
 private:
     std::unique_ptr<Ui::MainWindow> ui;
     QString cur_dir;
+    QTime time;
 };
 
 #endif // MAINWINDOW_H

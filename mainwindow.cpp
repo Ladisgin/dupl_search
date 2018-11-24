@@ -63,9 +63,18 @@ void MainWindow::scan_directory(QString const& dir) {
 
 void MainWindow::duplicate_find(){
     ui->treeWidget->clear();
+    time.start();
     auto ds = duplicate_search(cur_dir.toStdString());
     auto v = ds.get_dublicate();
     display_table(v);
+}
+
+QString fileSize(uint64_t nSize) {
+    static const QString size_names[] = {"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
+    size_t i = 0;
+    double dsize = nSize;
+    for (; dsize > 1023; dsize /= 1024, ++i) { }
+    return QString::number(dsize, 'g', 4) + " " + size_names[i];
 }
 
 void MainWindow::display_table(duplicates const & dups) {
@@ -80,7 +89,7 @@ void MainWindow::display_table(duplicates const & dups) {
         QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
         item->setText(0, QString::fromStdString(v.paths.front()));
         item->setText(1, QString::number(v.paths.size()));
-        item->setText(2, QString::number(v.size));
+        item->setText(2, fileSize(v.size));
         item->setTextColor(0, white);
         item->setTextColor(1, red);
         item->setTextColor(2, red);
@@ -103,7 +112,7 @@ void MainWindow::display_table(duplicates const & dups) {
         item->addChild(child);
     }
     ui->treeWidget->addTopLevelItem(item);
-    QMessageBox::information(this, QString::fromUtf8("Notice"), "Find duplicate end");
+    QMessageBox::information(this, QString::fromUtf8("Notice"), "time: " + QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz"));
 }
 
 void MainWindow::show_about_dialog() {
