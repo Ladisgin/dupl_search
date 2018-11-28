@@ -152,7 +152,7 @@ void duplicate_search::get_dublicate() {
     }
     duplicates ans;
     for (auto &i:mp) {
-        if (ans.duplicates.size() > 30){
+        if (ans.duplicates.size() > 512){
             emit display_duplicates(ans);
             ans = duplicates();
         }

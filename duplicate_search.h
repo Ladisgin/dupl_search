@@ -17,7 +17,7 @@
 #include "xxhash64.h"
 
 const size_t READ_BLOCK = 4096 * 4;
-const size_t MAX_OPEN_FILE = 200;
+const size_t MAX_OPEN_FILE = 196;
 
 struct duplicate {
     duplicate (std::vector<std::string> const & paths, uint64_t const & size): paths(paths), size(size){}

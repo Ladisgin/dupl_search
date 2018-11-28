@@ -101,16 +101,17 @@ void MainWindow::display_table(duplicates dups) {
         QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
 
         QFileInfo fin = QFileInfo(QString::fromStdString(v.paths.front()));
-        QFileSystemModel *qfs_model = new QFileSystemModel();
-        qfs_model->setRootPath(fin.path());
-        item->setIcon(0, qfs_model->iconProvider()->icon(fin));
 
-        item->setText(0, QString::fromStdString(v.paths.front()));
+        item->setText(0, fin.fileName());
+        item->setIcon(0, QFileIconProvider().icon(fin));
         item->setText(1, QString::number(v.paths.size()));
         item->setText(2, fileSize(v.size));
         item->setTextColor(0, white);
-        item->setTextColor(1, QColor::fromRgb(std::max(255ul, v.paths.size()/25), 0, 0));
-        item->setTextColor(2, QColor::fromRgb(std::max(static_cast<uint64_t>(255), v.size/25), 0, 0));
+
+        int gb_value = static_cast<int>(255 - std::min(255ul, v.paths.size()*25));
+        item->setTextColor(1, QColor::fromRgb(255, gb_value, gb_value));
+        gb_value = static_cast<int>(255 - std::min(static_cast<uint64_t>(255), v.size/256));
+        item->setTextColor(2, QColor::fromRgb(255, gb_value, gb_value));
 
         for (auto file : v.paths) {
             QTreeWidgetItem* child = new QTreeWidgetItem();
