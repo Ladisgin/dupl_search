@@ -3,10 +3,13 @@
 
 #include <QMainWindow>
 #include <QTime>
+#include <QMetaType>
 
 #include <vector>
 #include <string>
 #include "duplicate_search.h"
+
+Q_DECLARE_METATYPE(duplicates)
 
 namespace Ui {
 class MainWindow;
@@ -24,7 +27,8 @@ private slots:
     void scan_directory(QString const& dir);
     void duplicate_find();
     void show_about_dialog();
-    void display_table(duplicates const & dups);
+    void show_time();
+    void display_table(duplicates dups);
 
 private:
     std::unique_ptr<Ui::MainWindow> ui;

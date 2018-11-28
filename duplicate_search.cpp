@@ -104,6 +104,7 @@ std::vector<std::vector<std::string>> find_equals(std::vector<std::string> const
 }
 
 void duplicate_search::clear()  {
+    start_paths = std::vector<std::string>(0);
     mp = std::map<uint64_t, std::vector<std::string>>();
     pd_paths = std::vector<std::string>(0);
 }
@@ -132,14 +133,29 @@ void duplicate_search::update(const std::string &path){
 }
 
 duplicate_search::duplicate_search(const std::string &path) {
+    QObject();
     clear();
-    update(path);
+    start_paths.push_back(path);
 }
 
+duplicate_search::duplicate_search(const std::vector<std::string> &paths) {
+    clear();
+    start_paths = paths;
+}
 
-duplicates duplicate_search::get_dublicate() {
+duplicate_search::~duplicate_search() {
+}
+
+void duplicate_search::get_dublicate() {
+    for(auto const& i: start_paths) {
+        update(i);
+    }
     duplicates ans;
     for (auto &i:mp) {
+        if (ans.duplicates.size() > 30){
+            emit display_duplicates(ans);
+            ans = duplicates();
+        }
         if (i.second.size() > MAX_OPEN_FILE) {
             if(i.first < READ_BLOCK && i.second.size()*i.first < 2097152) {
                 std::map<std::vector<char>, std::vector<std::string>> lmap;
@@ -232,5 +248,6 @@ duplicates duplicate_search::get_dublicate() {
         }
     }
     ans.pd_paths = pd_paths;
-    return ans;
+    emit display_duplicates(ans);
+    emit finished();
 }

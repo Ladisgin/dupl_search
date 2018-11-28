@@ -12,6 +12,7 @@
 #include <QFileInfo>
 #include <QDirIterator>
 #include <QString>
+#include <QObject>
 
 #include "xxhash64.h"
 
@@ -29,25 +30,25 @@ struct duplicates {
     std::vector<std::string> pd_paths;
 };
 
-class duplicate_search {
+class duplicate_search : public QObject {
+    Q_OBJECT
+public:
+    duplicate_search(const std::string &path);
+    duplicate_search(const std::vector<std::string> &paths);
+    ~duplicate_search();
+public slots:
+    void get_dublicate();
+signals:
+    void display_duplicates(duplicates dp);
+    void finished();
+    void error(QString err);
 private:
+    std::vector<std::string> start_paths;
     std::map<uint64_t, std::vector<std::string>> mp;
     std::vector<std::string> pd_paths;
-
     void clear();
-
     void add_tomp(std::string const &p, uint64_t const &fs);
-
-public:
     void update(const std::string &path);
-
-    duplicate_search() {
-        clear();
-    }
-
-    explicit duplicate_search(const std::string &path);
-
-    duplicates get_dublicate();
 };
 
 #endif // DUPLICATE_SEARCH_H
