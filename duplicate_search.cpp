@@ -1,4 +1,5 @@
 #include "duplicate_search.h"
+#include "QThread"
 
 bool is_equal(std::string const &first_file, const std::string &second_file) {
     std::ifstream fin1(first_file, std::ios::in | std::ios::binary);
@@ -121,6 +122,9 @@ void duplicate_search::add_tomp(std::string const &p, uint64_t const &fs) {
 void duplicate_search::update(const std::string &path){
     QDirIterator it(path.c_str(), QDir::NoDotAndDotDot | QDir::Hidden | QDir::NoSymLinks | QDir::AllEntries, QDirIterator::Subdirectories);
     while (it.hasNext()) {
+        if (QThread::currentThread()->isInterruptionRequested()) {
+            return;
+        }
         QFileInfo fi(it.next());
         if(fi.permission(QFile::ReadUser)) {
             if(fi.isFile()) {
@@ -148,11 +152,19 @@ duplicate_search::~duplicate_search() {
 
 void duplicate_search::get_dublicate() {
     for(auto const& i: start_paths) {
+        if (QThread::currentThread()->isInterruptionRequested()){
+            emit finished();
+            return;
+        }
         update(i);
     }
     duplicates ans;
     for (auto &i:mp) {
-        if (ans.duplicates.size() > 512){
+        if (ans.duplicates.size() > 768){
+            if (QThread::currentThread()->isInterruptionRequested()){
+                emit finished();
+                return;
+            }
             emit display_duplicates(ans);
             ans = duplicates();
         }
@@ -247,7 +259,9 @@ void duplicate_search::get_dublicate() {
             }
         }
     }
-    ans.pd_paths = pd_paths;
-    emit display_duplicates(ans);
+    if (!QThread::currentThread()->isInterruptionRequested()){
+        ans.pd_paths = pd_paths;
+        emit display_duplicates(ans);
+    }
     emit finished();
 }

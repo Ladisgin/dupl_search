@@ -15,15 +15,15 @@
 #include <QFileInfo>
 #include <QFileIconProvider>
 
-#include <vector>
-#include <string>
-
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow) {
     ui->setupUi(this);
     qRegisterMetaType<duplicates>("duplicates");
+    thread = nullptr;
 //    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
+
+    ui->toolBar->setStyleSheet(" QToolBar {background-color: rgb(31, 33, 37); border: 1px solid black}");
 
     ui->treeWidget->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     ui->treeWidget->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
@@ -36,11 +36,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionExit->setIcon(style.standardIcon(QCommonStyle::SP_DialogCloseButton));
     ui->actionAbout->setIcon(style.standardIcon(QCommonStyle::SP_DialogHelpButton));
     ui->action_duplicate_find->setIcon(style.standardIcon(QCommonStyle::SP_DialogYesButton));
+    ui->action_search_cancel->setIcon(style.standardIcon(QCommonStyle::SP_DialogNoButton));
 
     connect(ui->actionScan_Directory, &QAction::triggered, this, &MainWindow::select_directory);
     connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::show_about_dialog);
     connect(ui->action_duplicate_find, &QAction::triggered, this, &MainWindow::duplicate_find);
+    connect(ui->action_search_cancel, &QAction::triggered, this, &MainWindow::search_cancel);
 }
 
 MainWindow::~MainWindow(){}
@@ -54,28 +56,29 @@ void MainWindow::select_directory() {
 void MainWindow::scan_directory(QString const& dir) {
     ui->treeWidget->clear();
     cur_dir = dir;
-    auto white = QColor();
-    white.setRgb(255, 255, 255);
-    setWindowTitle(QString("Directory Content - %1").arg(dir));
-    QDir d(dir);
-    QFileInfoList list = d.entryInfoList();
-    for (QFileInfo file_info : list) {
-        QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
-        item->setText(0, file_info.fileName());
-        item->setText(2, QString::number(file_info.size()));
-        item->setTextColor(0, white);
-        ui->treeWidget->addTopLevelItem(item);
-    }
+    setWindowTitle(QString("current directory - %1").arg(dir));
+//    auto white = QColor();
+//    white.setRgb(255, 255, 255);
+//    QDir d(dir);
+//    QFileInfoList list = d.entryInfoList();
+//    for (QFileInfo file_info : list) {
+//        QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
+//        item->setText(0, file_info.fileName());
+//        item->setText(2, QString::number(file_info.size()));
+//        item->setTextColor(0, white);
+//        ui->treeWidget->addTopLevelItem(item);
+//    }
 }
 
 void MainWindow::duplicate_find(){
+    search_cancel();
     ui->treeWidget->clear();
     time.start();
-    QThread* thread = new QThread();
+    thread = new QThread();
     duplicate_search* worker = new duplicate_search(cur_dir.toStdString());
     worker->moveToThread(thread);
     connect(worker, SIGNAL (display_duplicates(duplicates)), this, SLOT(display_table(duplicates)));
-    connect(worker, SIGNAL (finished()), this, SLOT (show_time()));
+    connect(worker, SIGNAL (finished()), this, SLOT (search_end()));
     connect(thread, SIGNAL (started()), worker, SLOT (get_dublicate()));
     connect(worker, SIGNAL (finished()), thread, SLOT (quit()));
     connect(worker, SIGNAL (finished()), worker, SLOT (deleteLater()));
@@ -136,10 +139,22 @@ void MainWindow::display_table(duplicates dups) {
     }
 }
 
-void MainWindow::show_time(){
+void MainWindow::search_end() {
+    thread = nullptr;
     QMessageBox::information(this, QString::fromUtf8("Notice"), "time: " + QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz"));
 }
 
 void MainWindow::show_about_dialog() {
     QMessageBox::aboutQt(this);
+}
+
+void MainWindow::search_cancel() {
+    if(thread != nullptr && thread->isRunning()){
+        thread->requestInterruption();
+        thread = nullptr;
+    }
+}
+
+void MainWindow::display_progress(){
+
 }

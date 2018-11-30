@@ -40,6 +40,7 @@ public slots:
     void get_dublicate();
 signals:
     void display_duplicates(duplicates dp);
+    void display_progress(duplicates dp);
     void finished();
     void error(QString err);
 private:

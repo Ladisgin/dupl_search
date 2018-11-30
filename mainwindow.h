@@ -27,10 +27,13 @@ private slots:
     void scan_directory(QString const& dir);
     void duplicate_find();
     void show_about_dialog();
-    void show_time();
+    void search_end();
     void display_table(duplicates dups);
+    void search_cancel();
+    void display_progress();
 
 private:
+    QThread* thread;
     std::unique_ptr<Ui::MainWindow> ui;
     QString cur_dir;
     QTime time;
