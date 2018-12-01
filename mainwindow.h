@@ -25,6 +25,7 @@ public:
     ~MainWindow();
 
 private slots:
+    void display_bad_files(std::vector<std::string> const &bads, QString error_info);
     void select_directory();
     void scan_directory(QString const& dir);
     void duplicate_find();

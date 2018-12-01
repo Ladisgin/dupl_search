@@ -67,20 +67,20 @@ void MainWindow::scan_directory(QString const& dir) {
     ui->treeWidget->clear();
     cur_dir = dir;
     setWindowTitle(QString("current directory - %1").arg(dir));
-//    auto white = QColor();
-//    white.setRgb(255, 255, 255);
+//    auto QColor::fromRgb(255, 255, 255) = QColor();
+//    QColor::fromRgb(255, 255, 255).setRgb(255, 255, 255);
 //    QDir d(dir);
 //    QFileInfoList list = d.entryInfoList();
 //    for (QFileInfo file_info : list) {
 //        QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
 //        item->setText(0, file_info.fileName());
 //        item->setText(2, QString::number(file_info.size()));
-//        item->setTextColor(0, white);
+//        item->setTextColor(0, QColor::fromRgb(255, 255, 255));
 //        ui->treeWidget->addTopLevelItem(item);
 //    }
 }
 
-void MainWindow::duplicate_find(){
+void MainWindow::duplicate_find() {
     search_cancel();
 
     ui->treeWidget->clear();
@@ -114,12 +114,24 @@ QString fileSize(uint64_t nSize) {
     return QString::number(dsize, 'g', 4) + " " + size_names[i];
 }
 
+void MainWindow::display_bad_files(std::vector<std::string> const &bads, QString error_info) {
+    if(bads.size()){
+        QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
+        item->setText(0, error_info);
+        item->setText(1, QString::number(bads.size()));
+        item->setTextColor(0, QColor::fromRgb(255, 255, 255));
+        for (auto file : bads) {
+            QTreeWidgetItem* child = new QTreeWidgetItem();
+            child->setText(0, QString::fromStdString(file));
+            child->setTextColor(0, QColor::fromRgb(184, 187, 198));
+            item->addChild(child);
+        }
+        ui->treeWidget->addTopLevelItem(item);
+    }
+}
+
 void MainWindow::display_table(duplicates dups) {
     setWindowTitle(QString("Dublicate from - %1").arg(cur_dir));
-    auto white = QColor();
-    auto grey = QColor();
-    white.setRgb(255, 255, 255);
-    grey.setRgb(184, 187, 198);
     for (auto v : dups.duplicates) {
         QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
 
@@ -129,7 +141,7 @@ void MainWindow::display_table(duplicates dups) {
         item->setIcon(0, QFileIconProvider().icon(fin));
         item->setText(1, QString::number(v.paths.size()));
         item->setText(2, fileSize(v.size));
-        item->setTextColor(0, white);
+        item->setTextColor(0, QColor::fromRgb(255, 255, 255));
 
         int gb_value = static_cast<int>(255 - std::min(255ul, v.paths.size()*25));
         item->setTextColor(1, QColor::fromRgb(255, gb_value, gb_value));
@@ -139,24 +151,13 @@ void MainWindow::display_table(duplicates dups) {
         for (auto file : v.paths) {
             QTreeWidgetItem* child = new QTreeWidgetItem();
             child->setText(0, QString::fromStdString(file));
-            child->setTextColor(0, grey);
+            child->setTextColor(0, QColor::fromRgb(184, 187, 198));
             item->addChild(child);
         }
         ui->treeWidget->addTopLevelItem(item);
     }
-    if(dups.pd_paths.size()){
-        QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
-        item->setText(0, "permission denied files");
-        item->setText(1, QString::number(dups.pd_paths.size()));
-        item->setTextColor(0, white);
-        for (auto file : dups.pd_paths) {
-            QTreeWidgetItem* child = new QTreeWidgetItem();
-            child->setText(0, QString::fromStdString(file));
-            child->setTextColor(0, grey);
-            item->addChild(child);
-        }
-        ui->treeWidget->addTopLevelItem(item);
-    }
+    display_bad_files(dups.pd_paths, "permisson denied");
+    display_bad_files(dups.read_error, "open error");
 }
 
 void MainWindow::search_end() {
@@ -174,7 +175,7 @@ void MainWindow::search_cancel() {
     if(thread != nullptr && thread->isRunning()){
         thread->requestInterruption();
         thread->quit();
-        thread->wait();;
+        thread->wait();
         qDebug() << "process canceled";
     }
 }
