@@ -55,7 +55,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->action_search_cancel, &QAction::triggered, this, &MainWindow::search_cancel);
 }
 
-MainWindow::~MainWindow(){}
+MainWindow::~MainWindow(){
+    search_cancel();
+}
 
 void MainWindow::select_directory() {
     QString dir = QFileDialog::getExistingDirectory(this, "Select Directory for Scanning",
