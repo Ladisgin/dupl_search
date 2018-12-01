@@ -14,13 +14,17 @@
 #include <QFileSystemModel>
 #include <QFileInfo>
 #include <QFileIconProvider>
+#include <QtDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow) {
+    ui(new Ui::MainWindow), thread(nullptr) {
     ui->setupUi(this);
     qRegisterMetaType<duplicates>("duplicates");
-    thread = nullptr;
+
+    ui->progressBar->setMinimum(0);
+    ui->progressBar->setMaximum(1);
+    ui->progressBar->setValue(1);
 //    setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), qApp->desktop()->availableGeometry()));
 
     ui->toolBar->setStyleSheet(" QToolBar {background-color: rgb(31, 33, 37); border: 1px solid black}");
@@ -77,12 +81,21 @@ void MainWindow::duplicate_find(){
     thread = new QThread();
     duplicate_search* worker = new duplicate_search(cur_dir.toStdString());
     worker->moveToThread(thread);
+
+    ui->progressBar->setMinimum(0);
+    ui->progressBar->setMaximum(1);
+    ui->progressBar->setValue(0);
+    connect(worker, SIGNAL(set_max_progress(int)), ui->progressBar, SLOT(setMaximum(int)));
+    connect(worker, SIGNAL(set_progress(int)), ui->progressBar, SLOT(setValue(int)));
+
     connect(worker, SIGNAL (display_duplicates(duplicates)), this, SLOT(display_table(duplicates)));
     connect(worker, SIGNAL (finished()), this, SLOT (search_end()));
+
     connect(thread, SIGNAL (started()), worker, SLOT (get_dublicate()));
     connect(worker, SIGNAL (finished()), thread, SLOT (quit()));
     connect(worker, SIGNAL (finished()), worker, SLOT (deleteLater()));
     connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
+
     thread->start();
 }
 
@@ -140,8 +153,10 @@ void MainWindow::display_table(duplicates dups) {
 }
 
 void MainWindow::search_end() {
+    ui->progressBar->setValue(ui->progressBar->maximum());
     thread = nullptr;
-    QMessageBox::information(this, QString::fromUtf8("Notice"), "time: " + QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz"));
+    qDebug() << QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz");
+//    QMessageBox::information(this, QString::fromUtf8("Notice"), "time: " + QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz"));
 }
 
 void MainWindow::show_about_dialog() {
@@ -150,11 +165,9 @@ void MainWindow::show_about_dialog() {
 
 void MainWindow::search_cancel() {
     if(thread != nullptr && thread->isRunning()){
-        thread->requestInterruption();
+//        thread->requestInterruption();
+        thread->quit();
+        qDebug() << thread->wait();;
         thread = nullptr;
     }
-}
-
-void MainWindow::display_progress(){
-
 }
