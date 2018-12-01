@@ -37,10 +37,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeWidget->setAlternatingRowColors(true);
 
     QCommonStyle style;
+//    ui->actionScan_Directory->setIcon(QIcon("icons/icons8-folder-512.png"));
     ui->actionScan_Directory->setIcon(style.standardIcon(QCommonStyle::SP_DialogOpenButton));
     ui->actionExit->setIcon(style.standardIcon(QCommonStyle::SP_DialogCloseButton));
+    ui->actionExit->setIcon(style.standardIcon(QCommonStyle::SP_DialogCloseButton));
     ui->actionAbout->setIcon(style.standardIcon(QCommonStyle::SP_DialogHelpButton));
+//    ui->action_duplicate_find->setIcon(QIcon("icons/icons8-round-500"));
     ui->action_duplicate_find->setIcon(style.standardIcon(QCommonStyle::SP_DialogYesButton));
+//    ui->action_search_cancel->setIcon(QIcon("icons/icons8-cancel-500"));
     ui->action_search_cancel->setIcon(style.standardIcon(QCommonStyle::SP_DialogNoButton));
     connect(ui->treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(open_file(QTreeWidgetItem*, int)));
 
@@ -171,6 +175,7 @@ void MainWindow::search_cancel() {
         thread->quit();
         thread->wait();;
         thread = nullptr;
+        qDebug() << "process canceled";
     }
 }
 

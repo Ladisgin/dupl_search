@@ -159,11 +159,11 @@ void duplicate_search::get_dublicate() {
         update(i);
     }
     duplicates ans;
-    emit set_max_progress(mp.size());
+    emit set_max_progress(mp.size() + (mp.size()/20));
     int t = 0;
     for (auto &i:mp) {
         ++t;
-        if (ans.duplicates.size() > 256){
+        if (ans.duplicates.size() > 512){
             if (QThread::currentThread()->isInterruptionRequested()){
                 emit finished();
                 return;

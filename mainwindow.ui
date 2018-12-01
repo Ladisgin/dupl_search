@@ -571,7 +571,7 @@
     <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
-    <bool>true</bool>
+    <bool>false</bool>
    </attribute>
    <addaction name="actionScan_Directory"/>
    <addaction name="action_duplicate_find"/>
