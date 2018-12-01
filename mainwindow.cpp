@@ -19,7 +19,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), thread(nullptr) {
+    ui(new Ui::MainWindow), thread(new QThread()) {
     ui->setupUi(this);
     qRegisterMetaType<duplicates>("duplicates");
 
@@ -82,11 +82,11 @@ void MainWindow::scan_directory(QString const& dir) {
 
 void MainWindow::duplicate_find(){
     search_cancel();
+
     ui->treeWidget->clear();
     time.start();
-    thread = new QThread();
     duplicate_search* worker = new duplicate_search(cur_dir.toStdString());
-    worker->moveToThread(thread);
+    worker->moveToThread(thread.get());
 
     ui->progressBar->setMinimum(0);
     ui->progressBar->setMaximum(1);
@@ -97,12 +97,13 @@ void MainWindow::duplicate_find(){
     connect(worker, SIGNAL (display_duplicates(duplicates)), this, SLOT(display_table(duplicates)));
     connect(worker, SIGNAL (finished()), this, SLOT (search_end()));
 
-    connect(thread, SIGNAL (started()), worker, SLOT (get_dublicate()));
-    connect(worker, SIGNAL (finished()), thread, SLOT (quit()));
+    connect(thread.get(), SIGNAL (started()), worker, SLOT (get_dublicate()));
+    connect(worker, SIGNAL (finished()), thread.get(), SLOT (quit()));
     connect(worker, SIGNAL (finished()), worker, SLOT (deleteLater()));
-    connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
+//    connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
 
     thread->start();
+    qDebug() << "thread start";
 }
 
 QString fileSize(uint64_t nSize) {
@@ -160,8 +161,8 @@ void MainWindow::display_table(duplicates dups) {
 
 void MainWindow::search_end() {
     ui->progressBar->setValue(ui->progressBar->maximum());
-    thread = nullptr;
-    qDebug() << QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz");
+//    thread = nullptr;
+    qDebug() << "thread finished time: " << QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz");
 //    QMessageBox::information(this, QString::fromUtf8("Notice"), "time: " + QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz"));
 }
 
@@ -174,7 +175,6 @@ void MainWindow::search_cancel() {
         thread->requestInterruption();
         thread->quit();
         thread->wait();;
-        thread = nullptr;
         qDebug() << "process canceled";
     }
 }

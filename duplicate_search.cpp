@@ -1,14 +1,14 @@
 #include "duplicate_search.h"
 #include "QThread"
 
-bool is_equal(std::string const &first_file, const std::string &second_file) {
+bool is_equal(std::string const &first_file, const std::string &second_file, std::vector<std::string> &bad_file) {
     std::ifstream fin1(first_file, std::ios::in | std::ios::binary);
     std::ifstream fin2(second_file, std::ios::in | std::ios::binary);
     if (!fin1) {
-        throw std::runtime_error("file not can be open: " + first_file);
+        bad_file.push_back(first_file);
     }
     if (!fin2) {
-        throw std::runtime_error("file not can be open: " + second_file);
+        bad_file.push_back(second_file);
     }
     std::vector<char> buffer1(READ_BLOCK), buffer2(READ_BLOCK);
     while (!fin1.eof() && !fin2.eof()) {
@@ -26,7 +26,7 @@ bool is_equal(std::string const &first_file, const std::string &second_file) {
     return ans;
 }
 
-std::vector<std::vector<std::string>> find_equals(std::vector<std::string> const &file_names) {
+std::vector<std::vector<std::string>> find_equals(std::vector<std::string> const &file_names, std::vector<std::string> &bad_file) {
     struct file_read {
         std::string name;
         std::ifstream fin;
@@ -35,11 +35,7 @@ std::vector<std::vector<std::string>> find_equals(std::vector<std::string> const
         file_read() {}
 
         file_read(std::string const &name) : name(name), fin(name, std::ios::in | std::ios::binary),
-                                             buffer(READ_BLOCK) {
-            if (!fin) {
-                throw std::runtime_error("file not can be open: " + name);
-            }
-        }
+                                             buffer(READ_BLOCK) {}
 
         void read() {
             if (!fin.eof()) {
@@ -50,12 +46,18 @@ std::vector<std::vector<std::string>> find_equals(std::vector<std::string> const
     };
 
     std::vector<std::vector<file_read>> files(1);
+    size_t files_count = 0;
     for (auto &s: file_names) {
         files.back().emplace_back(s);
+        if(!files.back().back().fin){
+            bad_file.push_back(s);
+        } else {
+            ++files_count;
+        }
     }
 
     bool flag = true;
-    while (files.size() < file_names.size() && flag) {
+    while (files.size() < files_count && flag) {
         auto n = files.size();
         for (size_t i = 0; i < n; ++i) {
             if (files[i].size() > 1) {
@@ -222,7 +224,7 @@ void duplicate_search::get_dublicate() {
                             last_part.push_back(t.second.back());
                             t.second.pop_back();
                         }
-                        arr = find_equals(last_part);
+                        arr = find_equals(last_part, read_error_files);
                         std::sort(arr.begin(), arr.end(),
                                   [](std::vector<std::string> const &a, std::vector<std::string> const &b) {
                                       return a.size() > b.size();
@@ -230,7 +232,7 @@ void duplicate_search::get_dublicate() {
                         for (auto const &j : t.second) {
                             bool flag = true;
                             for (auto &k:arr) {
-                                if (is_equal(k.front(), j)) {
+                                if (is_equal(k.front(), j, read_error_files)) {
                                     k.push_back(j);
                                     flag = false;
                                     break;
@@ -241,7 +243,7 @@ void duplicate_search::get_dublicate() {
                             }
                         }
                     } else if (t.second.size() > 1) {
-                        arr = find_equals(t.second);
+                        arr = find_equals(t.second, read_error_files);
                     }
                     for (auto &j:arr) {
                         if (j.size() > 1) {
@@ -251,14 +253,14 @@ void duplicate_search::get_dublicate() {
                 }
             }
         } else if (i.second.size() > 2) {
-            auto arr = find_equals(i.second);
+            auto arr = find_equals(i.second, read_error_files);
             for (auto &j:arr) {
                 if (j.size() > 1) {
                     ans.duplicates.emplace_back(j, i.first);
                 }
             }
         } else if (i.second.size() > 1) {
-            if (is_equal(i.second.front(), i.second.back())) {
+            if (is_equal(i.second.front(), i.second.back(), read_error_files)) {
                 ans.duplicates.emplace_back(std::vector<std::string>({i.second.front(), i.second.back()}), i.first);
             }
         }

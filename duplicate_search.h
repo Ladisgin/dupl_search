@@ -28,6 +28,7 @@ struct duplicate {
 struct duplicates {
     std::vector<duplicate> duplicates;
     std::vector<std::string> pd_paths;
+    std::vector<std::string> read_error;
 };
 
 class duplicate_search : public QObject {
@@ -48,6 +49,8 @@ private:
     std::vector<std::string> start_paths;
     std::map<uint64_t, std::vector<std::string>> mp;
     std::vector<std::string> pd_paths;
+    std::vector<std::string> read_error_files;
+
     void clear();
     void add_tomp(std::string const &p, uint64_t const &fs);
     void update(const std::string &path);

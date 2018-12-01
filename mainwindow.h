@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 #include "duplicate_search.h"
 
 Q_DECLARE_METATYPE(duplicates)
@@ -37,7 +38,7 @@ private:
     std::unique_ptr<Ui::MainWindow> ui;
     QString cur_dir;
     QTime time;
-    QThread* thread;
+    std::unique_ptr<QThread> thread;
 };
 
 #endif // MAINWINDOW_H
