@@ -15,6 +15,7 @@
 #include <QFileInfo>
 #include <QFileIconProvider>
 #include <QtDebug>
+#include <QDesktopServices>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -41,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->actionAbout->setIcon(style.standardIcon(QCommonStyle::SP_DialogHelpButton));
     ui->action_duplicate_find->setIcon(style.standardIcon(QCommonStyle::SP_DialogYesButton));
     ui->action_search_cancel->setIcon(style.standardIcon(QCommonStyle::SP_DialogNoButton));
+    connect(ui->treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(open_file(QTreeWidgetItem*, int)));
 
     connect(ui->actionScan_Directory, &QAction::triggered, this, &MainWindow::select_directory);
     connect(ui->actionExit, &QAction::triggered, this, &QWidget::close);
@@ -165,9 +167,15 @@ void MainWindow::show_about_dialog() {
 
 void MainWindow::search_cancel() {
     if(thread != nullptr && thread->isRunning()){
-//        thread->requestInterruption();
+        thread->requestInterruption();
         thread->quit();
-        qDebug() << thread->wait();;
+        thread->wait();;
         thread = nullptr;
+    }
+}
+
+void MainWindow::open_file(QTreeWidgetItem *item, int){
+    if(item->childCount() == 0) {
+        QDesktopServices::openUrl(QUrl("file:" + item->text(0)));
     }
 }

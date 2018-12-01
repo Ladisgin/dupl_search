@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QTime>
 #include <QMetaType>
+#include <QTreeWidgetItem>
 
 #include <vector>
 #include <string>
@@ -30,6 +31,7 @@ private slots:
     void search_end();
     void display_table(duplicates dups);
     void search_cancel();
+    void open_file(QTreeWidgetItem *item, int column);
 
 private:
     std::unique_ptr<Ui::MainWindow> ui;
