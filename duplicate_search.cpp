@@ -153,25 +153,27 @@ duplicate_search::~duplicate_search() {
 }
 
 void duplicate_search::get_dublicate() {
+    int max_progress = 0;
+    emit set_max_progress(0);
+    emit set_progress(0);
     for(auto const& i: start_paths) {
         if (QThread::currentThread()->isInterruptionRequested()){
-            emit finished();
-            return;
+            break;
         }
         update(i);
     }
     duplicates ans;
-    emit set_max_progress(mp.size() + (mp.size()/20));
+    max_progress = static_cast<int>(mp.size() + (mp.size()/20) + 1);
+    emit set_max_progress(max_progress);
     int t = 0;
     for (auto &i:mp) {
         ++t;
+        emit set_progress(t);
         if (ans.duplicates.size() > 512){
             if (QThread::currentThread()->isInterruptionRequested()){
-                emit finished();
-                return;
+                break;
             }
             emit display_duplicates(ans);
-            emit set_progress(t);
             ans = duplicates();
         }
         if (i.second.size() > MAX_OPEN_FILE) {
@@ -268,7 +270,7 @@ void duplicate_search::get_dublicate() {
     if (!QThread::currentThread()->isInterruptionRequested()){
         ans.pd_paths = pd_paths;
         emit display_duplicates(ans);
-        emit set_progress(t);
     }
+    emit set_progress(max_progress);
     emit finished();
 }

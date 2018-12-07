@@ -136,6 +136,7 @@
     <addaction name="actionScan_Directory"/>
     <addaction name="action_duplicate_find"/>
     <addaction name="action_search_cancel"/>
+    <addaction name="action_delete_all_duplicate"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
    </widget>
@@ -576,6 +577,7 @@
    <addaction name="actionScan_Directory"/>
    <addaction name="action_duplicate_find"/>
    <addaction name="action_search_cancel"/>
+   <addaction name="action_delete_all_duplicate"/>
   </widget>
   <action name="actionScan_Directory">
    <property name="text">
@@ -603,6 +605,11 @@
    </property>
    <property name="toolTip">
     <string>search_cancel</string>
+   </property>
+  </action>
+  <action name="action_delete_all_duplicate">
+   <property name="text">
+    <string>&amp;delete_all_duplicate</string>
    </property>
   </action>
  </widget>

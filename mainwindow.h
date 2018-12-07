@@ -34,8 +34,11 @@ private slots:
     void display_table(duplicates dups);
     void search_cancel();
     void open_file(QTreeWidgetItem *item, int column);
+    void delete_duplicate();
 
 private:
+    bool delete_file(QTreeWidgetItem *item);
+
     std::unique_ptr<Ui::MainWindow> ui;
     QString cur_dir;
     QTime time;

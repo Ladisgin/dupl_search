@@ -19,7 +19,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow), thread(new QThread()) {
+    ui(new Ui::MainWindow), cur_dir(QDir::homePath()), thread(new QThread()) {
     ui->setupUi(this);
     qRegisterMetaType<duplicates>("duplicates");
 
@@ -37,15 +37,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeWidget->setAlternatingRowColors(true);
 
     QCommonStyle style;
-//    ui->actionScan_Directory->setIcon(QIcon("icons/icons8-folder-512.png"));
-    ui->actionScan_Directory->setIcon(style.standardIcon(QCommonStyle::SP_DialogOpenButton));
-    ui->actionExit->setIcon(style.standardIcon(QCommonStyle::SP_DialogCloseButton));
+    ui->actionScan_Directory->setIcon(QIcon(":/icons/icons/icons8-folder-512.png"));
+//    ui->actionScan_Directory->setIcon(style.standardIcon(QCommonStyle::SP_DialogOpenButton));
+    ui->action_duplicate_find->setIcon(QIcon(":/icons/icons/icons8-play.png"));
+//    ui->action_duplicate_find->setIcon(style.standardIcon(QCommonStyle::SP_DialogYesButton));
+    ui->action_search_cancel->setIcon(QIcon(":/icons/icons/icons8-cancel-500.png"));
+//    ui->action_search_cancel->setIcon(style.standardIcon(QCommonStyle::SP_DialogNoButton));
+    ui->action_delete_all_duplicate->setIcon(QIcon(":/icons/icons/icons8-bin-512.png"));
+
     ui->actionExit->setIcon(style.standardIcon(QCommonStyle::SP_DialogCloseButton));
     ui->actionAbout->setIcon(style.standardIcon(QCommonStyle::SP_DialogHelpButton));
-//    ui->action_duplicate_find->setIcon(QIcon("icons/icons8-round-500"));
-    ui->action_duplicate_find->setIcon(style.standardIcon(QCommonStyle::SP_DialogYesButton));
-//    ui->action_search_cancel->setIcon(QIcon("icons/icons8-cancel-500"));
-    ui->action_search_cancel->setIcon(style.standardIcon(QCommonStyle::SP_DialogNoButton));
     connect(ui->treeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(open_file(QTreeWidgetItem*, int)));
 
     connect(ui->actionScan_Directory, &QAction::triggered, this, &MainWindow::select_directory);
@@ -53,6 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::show_about_dialog);
     connect(ui->action_duplicate_find, &QAction::triggered, this, &MainWindow::duplicate_find);
     connect(ui->action_search_cancel, &QAction::triggered, this, &MainWindow::search_cancel);
+    connect(ui->action_delete_all_duplicate, &QAction::triggered, this, &MainWindow::delete_duplicate);
 }
 
 MainWindow::~MainWindow(){
@@ -90,9 +92,6 @@ void MainWindow::duplicate_find() {
     duplicate_search* worker = new duplicate_search(cur_dir.toStdString());
     worker->moveToThread(thread.get());
 
-    ui->progressBar->setMinimum(0);
-    ui->progressBar->setMaximum(1);
-    ui->progressBar->setValue(0);
     connect(worker, SIGNAL(set_max_progress(int)), ui->progressBar, SLOT(setMaximum(int)));
     connect(worker, SIGNAL(set_progress(int)), ui->progressBar, SLOT(setValue(int)));
 
@@ -104,11 +103,12 @@ void MainWindow::duplicate_find() {
     connect(worker, SIGNAL (finished()), worker, SLOT (deleteLater()));
 //    connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
 
+
     thread->start();
     qDebug() << "thread start";
 }
 
-QString fileSize(uint64_t nSize) {
+inline QString fileSize(uint64_t nSize) {
     static const QString size_names[] = {"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
     size_t i = 0;
     double dsize = nSize;
@@ -116,7 +116,7 @@ QString fileSize(uint64_t nSize) {
     return QString::number(dsize, 'g', 4) + " " + size_names[i];
 }
 
-void MainWindow::display_bad_files(std::vector<std::string> const &bads, QString error_info) {
+inline void MainWindow::display_bad_files(std::vector<std::string> const &bads, QString error_info) {
     if(bads.size()){
         QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
         item->setText(0, error_info);
@@ -134,6 +134,8 @@ void MainWindow::display_bad_files(std::vector<std::string> const &bads, QString
 
 void MainWindow::display_table(duplicates dups) {
     setWindowTitle(QString("Dublicate from - %1").arg(cur_dir));
+    QList<QTreeWidgetItem*> items;
+    QList<QTreeWidgetItem*> childs;
     for (auto v : dups.duplicates) {
         QTreeWidgetItem* item = new QTreeWidgetItem(ui->treeWidget);
 
@@ -144,26 +146,35 @@ void MainWindow::display_table(duplicates dups) {
         item->setText(1, QString::number(v.paths.size()));
         item->setText(2, fileSize(v.size));
         item->setTextColor(0, QColor::fromRgb(255, 255, 255));
+        item->setTextAlignment(1, Qt::AlignRight);
+        item->setTextAlignment(2, Qt::AlignRight);
 
-        int gb_value = static_cast<int>(255 - std::min(255ul, v.paths.size()*25));
+        int gb_value = static_cast<int>(255 - std::min(static_cast<decltype(v.paths.size())>(255), v.paths.size()*25));
         item->setTextColor(1, QColor::fromRgb(255, gb_value, gb_value));
-        gb_value = static_cast<int>(255 - std::min(static_cast<uint64_t>(255), v.size/256));
+        gb_value = static_cast<int>(255 - std::min(static_cast<decltype (v.size)>(255), v.size/256));
         item->setTextColor(2, QColor::fromRgb(255, gb_value, gb_value));
 
+
+        childs.clear();
         for (auto file : v.paths) {
             QTreeWidgetItem* child = new QTreeWidgetItem();
             child->setText(0, QString::fromStdString(file));
             child->setTextColor(0, QColor::fromRgb(184, 187, 198));
-            item->addChild(child);
+            child->setIcon(2, QIcon(":/icons/icons/icons8-bin-512.png"));
+//            child->setBackgroundColor(2, QColor::fromRgb(255, 0, 0));
+//            child->setTextAlignment(2, Qt::AlignHCenter);
+            childs << child;
         }
-        ui->treeWidget->addTopLevelItem(item);
+        item->addChildren(childs);
+        items << item;
     }
-    display_bad_files(dups.pd_paths, "permisson denied");
-    display_bad_files(dups.read_error, "open error");
+    ui->treeWidget->addTopLevelItems(items);
+
+    if(dups.pd_paths.size()) {display_bad_files(dups.pd_paths, "permisson denied");}
+    if(dups.read_error.size()) {display_bad_files(dups.read_error, "open error");}
 }
 
 void MainWindow::search_end() {
-    ui->progressBar->setValue(ui->progressBar->maximum());
 //    thread = nullptr;
     qDebug() << "thread finished time: " << QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz");
 //    QMessageBox::information(this, QString::fromUtf8("Notice"), "time: " + QTime::fromMSecsSinceStartOfDay(time.restart()).toString("HH:mm:ss:zzz"));
@@ -182,8 +193,43 @@ void MainWindow::search_cancel() {
     }
 }
 
-void MainWindow::open_file(QTreeWidgetItem *item, int){
+void MainWindow::open_file(QTreeWidgetItem *item, int column){
     if(item->childCount() == 0) {
-        QDesktopServices::openUrl(QUrl("file:" + item->text(0)));
+        QString filePath = item->text(0);
+        if(column == 2){
+            if (delete_file(item)){
+                QMessageBox::information(this, "Result",  "Successfully deleted: " + filePath);
+            } else {
+                QMessageBox::information(this, "Result", "Failed to delete: " + filePath);
+            }
+        } else {
+            QDesktopServices::openUrl(QUrl("file:" + item->text(0)));
+        }
     }
+}
+
+void MainWindow::delete_duplicate(){
+    qDebug() << ui->treeWidget->topLevelItemCount();
+    for(auto i = ui->treeWidget->topLevelItemCount(); i != 0; --i){
+        auto item = ui->treeWidget->topLevelItem(i - 1);
+        for(auto j = item->childCount(); j > 1; --j){
+            delete_file(item->child(j - 1));
+        }
+    }
+}
+
+bool MainWindow::delete_file(QTreeWidgetItem *item) {
+    QString filePath = item->text(0);
+    if(QFile(filePath).remove()){
+        auto parent_item = item->parent();
+        delete item;
+        if(parent_item->childCount() < 2){
+//            while (parent_item->childCount()) {
+//                delete parent_item->takeChild(0);
+//            }
+            delete parent_item;
+        }
+        return true;
+    }
+    return false;
 }

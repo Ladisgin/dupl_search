@@ -28,7 +28,7 @@ QMAKE_CXXFLAGS += \
         -std=c++17 \
         -pthread
 
-QMAKE_CXXFLAGS_RELEASE -= \
+QMAKE_CXXFLAGS_RELEASE += \
         -Ofast \
         -flto \
         -fvisibility=hidden
@@ -51,3 +51,6 @@ FORMS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+RESOURCES += \
+    resource.qrc
