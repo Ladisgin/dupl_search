@@ -38,6 +38,7 @@ private slots:
 
 private:
     bool delete_file(QTreeWidgetItem *item);
+    bool delete_row_if_one_child(QTreeWidgetItem *item);
 
     std::unique_ptr<Ui::MainWindow> ui;
     QString cur_dir;

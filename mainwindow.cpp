@@ -142,7 +142,7 @@ void MainWindow::display_table(duplicates dups) {
         QFileInfo fin = QFileInfo(QString::fromStdString(v.paths.front()));
 
         item->setText(0, fin.fileName());
-        item->setIcon(0, QFileIconProvider().icon(fin));
+//        item->setIcon(0, QFileIconProvider().icon(fin));
         item->setText(1, QString::number(v.paths.size()));
         item->setText(2, fileSize(v.size));
         item->setTextColor(0, QColor::fromRgb(255, 255, 255));
@@ -160,8 +160,10 @@ void MainWindow::display_table(duplicates dups) {
             QTreeWidgetItem* child = new QTreeWidgetItem();
             child->setText(0, QString::fromStdString(file));
             child->setTextColor(0, QColor::fromRgb(184, 187, 198));
-            child->setIcon(2, QIcon(":/icons/icons/icons8-bin-512.png"));
-//            child->setBackgroundColor(2, QColor::fromRgb(255, 0, 0));
+//            child->setIcon(2, QIcon(":/icons/icons/icons8-bin-512.png"));
+
+            child->setText(2, "remove");
+            child->setTextColor(2, QColor::fromRgb(255, 0, 0));
 //            child->setTextAlignment(2, Qt::AlignHCenter);
             childs << child;
         }
@@ -197,7 +199,9 @@ void MainWindow::open_file(QTreeWidgetItem *item, int column){
     if(item->childCount() == 0) {
         QString filePath = item->text(0);
         if(column == 2){
-            if (delete_file(item)){
+            auto parent = item->parent();
+            if (delete_file(item)) {
+                delete_row_if_one_child(parent);
                 QMessageBox::information(this, "Result",  "Successfully deleted: " + filePath);
             } else {
                 QMessageBox::information(this, "Result", "Failed to delete: " + filePath);
@@ -212,23 +216,33 @@ void MainWindow::delete_duplicate(){
     qDebug() << ui->treeWidget->topLevelItemCount();
     for(auto i = ui->treeWidget->topLevelItemCount(); i != 0; --i){
         auto item = ui->treeWidget->topLevelItem(i - 1);
-        for(auto j = item->childCount(); j > 1; --j){
+        for(auto j = item->childCount(); j > 1; --j) {
             delete_file(item->child(j - 1));
         }
+        if(item->childCount() > 1) {
+            delete_file(item->child(0));
+        }
+        delete_row_if_one_child(item);
     }
 }
 
 bool MainWindow::delete_file(QTreeWidgetItem *item) {
     QString filePath = item->text(0);
     if(QFile(filePath).remove()){
-        auto parent_item = item->parent();
+        item->parent()->setText(1, QString::number(item->parent()->childCount() - 1));
         delete item;
-        if(parent_item->childCount() < 2){
+        return true;
+    }
+    return false;
+}
+
+
+bool MainWindow::delete_row_if_one_child(QTreeWidgetItem *item){
+    if(item->childCount() < 2) {
 //            while (parent_item->childCount()) {
 //                delete parent_item->takeChild(0);
 //            }
-            delete parent_item;
-        }
+        delete item;
         return true;
     }
     return false;

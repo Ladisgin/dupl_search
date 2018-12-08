@@ -168,12 +168,12 @@ void duplicate_search::get_dublicate() {
     int t = 0;
     for (auto &i:mp) {
         ++t;
-        emit set_progress(t);
         if (ans.duplicates.size() > 512){
             if (QThread::currentThread()->isInterruptionRequested()){
                 break;
             }
             emit display_duplicates(ans);
+            emit set_progress(t);
             ans = duplicates();
         }
         if (i.second.size() > MAX_OPEN_FILE) {
