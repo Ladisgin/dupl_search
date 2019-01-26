@@ -2,4 +2,4 @@
 
 Recursively look for duplicates in the directory
 
-Be careful pressing delete
+Be careful when pressing delete
